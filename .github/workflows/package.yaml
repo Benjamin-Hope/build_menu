@@ -23,7 +23,7 @@ jobs:
           mkdir -p package
 
           # Copy all project files to the package directory
-          cp -r ./* package/
+          rsync -a --exclude package --exclude .git ./ package/
 
           # Create a zip file of the package directory
           zip -r build_menu_package.zip package
