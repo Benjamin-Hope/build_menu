@@ -1,0 +1,35 @@
+name: Packaging
+
+on:
+  # Run workflow on pull request to main branch
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Steps to set up Python environment
+      # - name: Set up Python
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: '3.11'
+      - name: Package all project files
+        run: |
+          # Create a directory for the package
+          mkdir -p package
+
+          # Copy all project files to the package directory
+          rsync -a --exclude package --exclude .git ./ build_menu/
+
+          # Create a zip file of the package directory
+          zip -r build_menu_package.zip build_menu
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_menu_package
+          path: build_menu_package.zip
