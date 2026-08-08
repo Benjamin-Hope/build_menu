@@ -1,1 +1,4 @@
 **/__pycache__
+build/
+.environment/.env_checksum
+.vscode/
