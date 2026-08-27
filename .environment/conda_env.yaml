@@ -6,3 +6,7 @@ channels:
 dependencies:
   - python >= 3.14
   - conan
+  - gcc
+  - gxx
+  - cmake
+  - ninja

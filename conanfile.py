@@ -2,47 +2,55 @@
 You can run the following commands to build and package your project using Conan:
 conan create . myproject/1.0.0@ -s build_type=Release
 '''
+import os
 
+import configparser
+import sys
+import subprocess
+
+from pathlib import Path
 from conan import ConanFile
-from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
+from conan.tools.cmake import CMakeToolchain, CMakeDeps, cmake_layout, CMake
+from conan.tools.files import copy
 
 
 class ProjectConan(ConanFile):
     name = "myproject"  # TODO: Insert Project Name Here
     version = "1.0.0"  # TODO: Insert Project Version Here
-    # TODO: Change to "application" if this is an executable project
-    package_type = "library"
+
+    package_type = "application"
 
     # TODO: Add any additional settings, options, or requirements as needed
     # Conan builds different binaries for different settings, so you need to specify which settings your project supports. (Windows, Linux, MacOS, etc.)
     settings = "os", "compiler", "build_type", "arch"
 
-    # These instruct Conan to generate helper files for CMake.
-    generators = "CMakeDeps", "CMakeToolchain"
-
-    exports_sources = (
-        "CMakeLists.txt",
-        "src/*",
-        "include/*",
-    )
-
     def requirements(self):
         # TODO: Add any additional dependencies your project requires
         # Find the available versions in conan by writing "conan search <package_name> -r conan-center" in the terminal.
-        self.requires("fmt/11.1.3")
-        # self.requires("spdlog/1.15.0")
+        self.requires("fmt/11.1.4")
+
+    def build_requirements(self):
+        # Ensure CMake is available for the build process.
+        # self.tool_requires("cmake/3.15.0") # NOTE: If you use the env activations this is already included
+        pass
 
     def layout(self):
-        cmake_layout(self)  # Defines the folder structure.
+        conf_name = self.conf.get(
+            "user.myproject:build_target_path", default="fallback", check_type=str)
 
-    # This method is called to generate the build system files (CMake in this case).
+        cmake_layout(self, build_folder=f"build/{conf_name}")
+
     def generate(self):
-      # This allows Cmake to find the dependencies automatically
-        tc = CMakeToolchain(self)
-        tc.generate()
+        toolchain = CMakeToolchain(self)
+        toolchain.generate()
 
         deps = CMakeDeps(self)
         deps.generate()
+
+    def configure(self):
+        # This method can be used to configure settings or options before the build process.
+        # For example, you can set options for dependencies here.
+        pass
 
     def build(self):
         ''' Equivalent as running:
@@ -55,10 +63,77 @@ class ProjectConan(ConanFile):
 
     def package(self):
         # Packages the build artifacts into Conan's package directory.
-        # Assuming install rules are difined in CMakeLists.txt, this will copy the necessary files to the package folder.
+        # Assuming install rules are defined in CMakeLists.txt, this will copy the necessary files to the package folder.
         cmake = CMake(self)
         cmake.install()
 
-    def package_info(self):
-        # This method defines the information about the package, such as libraries to link against.
-        self.cpp_info.libs = ["myproject"]
+
+class BuildMenu:
+    """Convenience wrapper around the Conan CLI."""
+
+    def __init__(self):
+        self.project_dir = Path(__file__).resolve().parent
+        # TODO: Change to the directory where your build profiles are located
+        self.profile_dir = Path(self.project_dir) / "build_profiles"
+        # Below are the allowed config options for the build profiles
+
+        self.sections = ["execution", "settings"]
+        self.execution_keys = ["action", "depends_on"]
+        self.settings_keys = ["arch", "build_type", "compiler", "compiler.cppstd",
+                              "compiler.libcxx", "compiler.version", "os"]
+
+    def generate_user_interface(self):
+        # Import the GUI module here to avoid circular imports
+        features_path = os.path.join(os.path.dirname(__file__))
+        sys.path.append(features_path)
+
+        from build_helper.gui.interface import BuildGUI
+        self.app = BuildGUI(features_path)
+        self.app.fill_menu_items("EXECUTE", self.execute)
+        self.app.mainloop()
+
+    def execute(self):
+        self.profile_selected = self.app.get_selected_profile()
+
+        if self.profile_selected is None:
+            return
+
+        self.config = configparser.ConfigParser()
+        self.config.read(os.path.join(os.path.dirname(
+            __file__), "build_profiles", f"{self.profile_selected}.ini"))
+
+        print(f"Building...{self.profile_selected}")
+
+        from build_helper.build_helper import BuildHelper
+        self.BuildHelper = BuildHelper(self)
+
+        self.BuildHelper._validate_config_information()
+        self.BuildHelper._load_options_from_config()
+
+        self.options = self.BuildHelper.options
+
+        if self.options.action == "build":
+            print(
+                f"Executing build for profile: {self.profile_selected}")
+            self.BuildHelper.build(self.profile_selected)
+
+        if self.options.action == "get_dependencies":
+            print(
+                f"Getting dependencies for profile: {self.profile_selected}")
+
+        self.build_path = os.path.join(os.path.dirname(__file__), "build")
+        from build_helper.package_helper import Package_Helper
+        Package_Helper(self)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Build Menu")
+    parser.add_argument("--gui", action="store_true", help="Launch the GUI")
+    args = parser.parse_args()
+
+    build_menu = BuildMenu()
+
+    if args.gui:
+        build_menu.generate_user_interface()
