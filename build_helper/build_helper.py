@@ -63,6 +63,9 @@ class BuildHelper:
 
         for section in self.__cls.config.sections():
             for key, value in self.__cls.config.items(section):
+                import platform
+                if (key == "os") and (value != platform.system()):
+                    print(f"Warning! OS COnfiguration '{value}' do not match the actual OS '{platform.system()}'")
                 # avoid silent overwrite if same key appears in multiple sections
                 if hasattr(self.options, key):
                     raise ValueError(f"Duplicate key across sections: {key}")
@@ -90,20 +93,24 @@ class BuildHelper:
         else:
             cc = p("gcc")
             cxx = p("g++")
-            ar = p("ar")
-            ranlib = p("ranlib")
 
         compiler_executables = {"c": cc, "cpp": cxx}
-        extra_variables = {
-            "CMAKE_AR": {"value": ar, "cache": True, "type": "FILEPATH", "force": True},
-            "CMAKE_RANLIB": {"value": ranlib, "cache": True, "type": "FILEPATH", "force": True},
-        }
+        if is_windows:
+          extra_variables = {
+              "CMAKE_AR": {"value": ar, "cache": True, "type": "FILEPATH", "force": True},
+              "CMAKE_RANLIB": {"value": ranlib, "cache": True, "type": "FILEPATH", "force": True},
+          }
 
-        return [
-            "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
-            "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
-            "-c:h", f"tools.cmake.cmaketoolchain:extra_variables={extra_variables!r}",
-        ]
+          return [
+              "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
+              "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
+              "-c:h", f"tools.cmake.cmaketoolchain:extra_variables={extra_variables!r}",
+          ]
+        else:
+          return [
+              "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
+              "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
+          ]
 
     def __clean(self):
         import shutil
@@ -120,6 +127,11 @@ class BuildHelper:
 
         lines = ["[settings]"]
         for key, value in self.__cls.config.items("settings"):
+            import platform
+            if (key == "os") and (value != platform.system()):
+                print("Attempting to force os configuration fix")
+                print(f'key {key}:{value} -> {key}:{platform.system()}')
+                value = platform.system()
             lines.append(f"{key}={value}")
 
         profile_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
