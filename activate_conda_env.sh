@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -u
 
 # ---------- CONFIGURATION ----------
 ENV_FOLDER=".environment"
@@ -12,19 +12,19 @@ CHECKSUM_FILE="$ENV_FOLDER/.env_checksum"
 # Ensure conda is available
 if ! command -v conda >/dev/null 2>&1; then
     echo "Error: Conda (Miniforge) not found in PATH."
-    exit 1
+    return 1
 fi
 
 # Ensure environment folder exists
 if [ ! -d "$ENV_FOLDER" ]; then
     echo "Error: Directory '$ENV_FOLDER' not found."
-    exit 1
+    return 1
 fi
 
 # Ensure YAML exists
 if [ ! -f "$YAML_FILE" ]; then
     echo "Error: YAML file '$YAML_FILE' not found."
-    exit 1
+    return 1
 fi
 
 # Initialize Conda for this shell
@@ -103,5 +103,5 @@ if [ "$ACTIVE_ENV" = "$ENV_NAME" ]; then
     echo "=========================================="
 else
     echo "Failed to activate '$ENV_NAME'."
-    exit 1
+    return 1
 fi
