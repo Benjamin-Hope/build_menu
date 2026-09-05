@@ -6,8 +6,11 @@ channels:
 dependencies:
   - python >= 3.14
   - conan
-  - gcc
-  - gxx
+  - gcc=16.*
+  - gxx=16.*
+  - binutils
+  - libgcc
+  - libstdcxx
   - cmake
   - ninja
   - gmock

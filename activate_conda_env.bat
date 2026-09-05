@@ -2,9 +2,10 @@
 
 REM ---------- CONFIGURATION ----------
 set "ENV_FOLDER=.environment"
-set "ENV_NAME=conda_env"
 set "YAML_FILE=%ENV_FOLDER%\conda_env.yaml"
+set "LOCK_FILE=%ENV_FOLDER%\conda-lock.win-64.yml"
 set "CHECKSUM_FILE=%ENV_FOLDER%\.env_checksum"
+set "ENV_PREFIX=%~dp0.environment\envs\conda_env"
 REM -----------------------------------
 
 REM Locate conda.bat (prefer Miniforge default path)
@@ -52,96 +53,94 @@ if exist "%CHECKSUM_FILE%" (
     set /p LAST_CHECKSUM=<"%CHECKSUM_FILE%"
 )
 
-REM ----------------------------------------------------
-REM Determine whether the environment already exists
-REM ----------------------------------------------------
-set "ENV_EXISTS=0"
-
-call "%CONDA_BAT%" env list | findstr /R /C:"^[ *]*%ENV_NAME% " >nul
-if not errorlevel 1 (
-    set "ENV_EXISTS=1"
-)
-
-REM ----------------------------------------------------
-REM Decide whether recreation is needed
-REM ----------------------------------------------------
-set "RECREATE=0"
-
-if "%ENV_EXISTS%"=="0" (
-    echo Environment "%ENV_NAME%" does not exist.
-    set "RECREATE=1"
+REM Decide whether lock regeneration is needed
+set "NEED_LOCK_REGEN=0"
+if not exist "%LOCK_FILE%" (
+    echo Lock file "%LOCK_FILE%" not found.
+    set "NEED_LOCK_REGEN=1"
 )
 
 if /I not "%CURRENT_CHECKSUM%"=="%LAST_CHECKSUM%" (
     echo Detected changes in "%YAML_FILE%".
-    set "RECREATE=1"
+    set "NEED_LOCK_REGEN=1"
 )
 
-REM ----------------------------------------------------
-REM Recreate environment if required
-REM ----------------------------------------------------
-if "%RECREATE%"=="1" (
+REM Generate lock file if needed
+if "%NEED_LOCK_REGEN%"=="1" (
+    echo Generating lock file "%LOCK_FILE%"...
 
-    if "%ENV_EXISTS%"=="1" (
-        echo Removing existing environment "%ENV_NAME%"...
-        call "%CONDA_BAT%" remove -n "%ENV_NAME%" --all -y
+    where conda-lock >nul 2>nul
+    if errorlevel 1 (
+        echo conda-lock not found. Installing into base environment...
+        call "%CONDA_BAT%" install -n base -c conda-forge -y conda-lock
         if errorlevel 1 (
-            echo Error removing environment.
+            echo Error installing conda-lock.
             exit /b 1
         )
     )
 
-    echo Creating environment "%ENV_NAME%"...
-    call "%CONDA_BAT%" env create -f "%YAML_FILE%"
+    call "%CONDA_BAT%" run -n base conda-lock -f "%YAML_FILE%" -p win-64 --lockfile "%LOCK_FILE%"
     if errorlevel 1 (
-        echo Error creating environment.
+        echo Error generating lock file.
+        exit /b 1
+    )
+)
+
+REM Recreate environment when lock changed or env missing/corrupted
+set "RECREATE=0"
+if "%NEED_LOCK_REGEN%"=="1" (
+    set "RECREATE=1"
+)
+
+if not exist "%ENV_PREFIX%\conda-meta\history" (
+    set "RECREATE=1"
+)
+
+if "%RECREATE%"=="1" (
+    if exist "%ENV_PREFIX%" (
+        echo Removing existing environment prefix "%ENV_PREFIX%"...
+        call "%CONDA_BAT%" env remove -p "%ENV_PREFIX%" -y >nul 2>nul
+        if exist "%ENV_PREFIX%" (
+            rmdir /s /q "%ENV_PREFIX%"
+            if errorlevel 1 (
+                echo Error removing stale folder "%ENV_PREFIX%".
+                exit /b 1
+            )
+        )
+    )
+
+    for %%I in ("%ENV_PREFIX%") do set "ENV_PREFIX_PARENT=%%~dpI"
+    if not exist "%ENV_PREFIX_PARENT%" mkdir "%ENV_PREFIX_PARENT%"
+
+    echo Creating environment from lock file at "%ENV_PREFIX%"...
+    call "%CONDA_BAT%" run -n base conda-lock install -p "%ENV_PREFIX%" "%LOCK_FILE%"
+    if errorlevel 1 (
+        echo Error creating environment from lock file.
         exit /b 1
     )
 
-    REM Save checksum
     > "%CHECKSUM_FILE%" echo %CURRENT_CHECKSUM%
-
 ) else (
-    echo Environment "%ENV_NAME%" is already up to date.
+    echo Environment at "%ENV_PREFIX%" is already up to date.
 )
 
-REM ----------------------------------------------------
-REM Activate environment
-REM ----------------------------------------------------
-echo Activating environment "%ENV_NAME%"...
-call "%CONDA_BAT%" activate "%ENV_NAME%"
+REM Activate environment by prefix
+echo Activating environment at "%ENV_PREFIX%"...
+call "%CONDA_BAT%" activate "%ENV_PREFIX%"
 if errorlevel 1 (
-    echo Failed to activate "%ENV_NAME%".
+    echo Failed to activate environment at "%ENV_PREFIX%".
     exit /b 1
 )
 
-REM ----------------------------------------------------
-REM Query active environment information
-REM ----------------------------------------------------
-set "ACTIVE_ENV="
-set "ACTIVE_ENV_PATH="
-
-for /f "delims=" %%I in ('
-    call "%CONDA_BAT%" info --json ^
-    ^| powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "$j=$input|Out-String|ConvertFrom-Json; $j.active_prefix_name"
-') do set "ACTIVE_ENV=%%I"
-
-for /f "delims=" %%I in ('
-    call "%CONDA_BAT%" info --json ^
-    ^| powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "$j=$input|Out-String|ConvertFrom-Json; $j.active_prefix"
-') do set "ACTIVE_ENV_PATH=%%I"
-
-if /I "%ACTIVE_ENV%"=="%ENV_NAME%" (
-    echo.
-    echo ==========================================
-    echo Environment "%ENV_NAME%" is active.
-    echo Path: %ACTIVE_ENV_PATH%
-    echo ==========================================
-) else (
-    echo Failed to activate "%ENV_NAME%".
+if not defined CONDA_PREFIX (
+    echo Activation failed: CONDA_PREFIX is not set.
     exit /b 1
 )
+
+echo.
+echo ==========================================
+echo Environment is active.
+echo Prefix: %CONDA_PREFIX%
+echo ==========================================
 
 exit /b 0

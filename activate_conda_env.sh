@@ -4,14 +4,15 @@ set -u
 
 # ---------- CONFIGURATION ----------
 ENV_FOLDER=".environment"
-ENV_NAME="conda_env"
 YAML_FILE="$ENV_FOLDER/conda_env.yaml"
+LOCK_FILE="$ENV_FOLDER/conda-lock.linux-64.yml"
 CHECKSUM_FILE="$ENV_FOLDER/.env_checksum"
+ENV_PREFIX="$(pwd)/.environment/envs/conda_env"
 # -----------------------------------
 
 # Ensure conda is available
 if ! command -v conda >/dev/null 2>&1; then
-    echo "Error: Conda (Miniforge) not found in PATH."
+    echo "Error: Conda not found in PATH."
     return 1
 fi
 
@@ -40,68 +41,61 @@ else
     LAST_CHECKSUM=""
 fi
 
-# ----------------------------------------------------
-# Determine whether the environment already exists
-# ----------------------------------------------------
-ENV_EXISTS=0
-
-if conda env list | awk '{print $1}' | grep -Fxq "$ENV_NAME"; then
-    ENV_EXISTS=1
-fi
-
-# ----------------------------------------------------
-# Decide whether recreation is needed
-# ----------------------------------------------------
-RECREATE=0
-
-if [ "$ENV_EXISTS" -eq 0 ]; then
-    echo "Environment '$ENV_NAME' does not exist."
-    RECREATE=1
+# Decide whether lock regeneration is needed
+NEED_LOCK_REGEN=0
+if [ ! -f "$LOCK_FILE" ]; then
+    echo "Lock file '$LOCK_FILE' not found."
+    NEED_LOCK_REGEN=1
 fi
 
 if [ "$CURRENT_CHECKSUM" != "$LAST_CHECKSUM" ]; then
     echo "Detected changes in '$YAML_FILE'."
+    NEED_LOCK_REGEN=1
+fi
+
+# Generate lock file if needed
+if [ "$NEED_LOCK_REGEN" -eq 1 ]; then
+    if ! command -v conda-lock >/dev/null 2>&1; then
+        echo "conda-lock not found. Installing in base..."
+        conda install -n base -c conda-forge -y conda-lock || return 1
+    fi
+
+    echo "Generating lock file '$LOCK_FILE'..."
+    conda run -n base conda-lock -f "$YAML_FILE" -p linux-64 --lockfile "$LOCK_FILE" || return 1
+fi
+
+# Recreate environment if lock changed or env missing/corrupted
+RECREATE=0
+if [ "$NEED_LOCK_REGEN" -eq 1 ]; then
     RECREATE=1
 fi
 
-# ----------------------------------------------------
-# Recreate environment if required
-# ----------------------------------------------------
-if [ "$RECREATE" -eq 1 ]; then
+if [ ! -f "$ENV_PREFIX/conda-meta/history" ]; then
+    RECREATE=1
+fi
 
-    if [ "$ENV_EXISTS" -eq 1 ]; then
-        echo "Removing existing environment '$ENV_NAME'..."
-        conda env remove -n "$ENV_NAME" -y
+if [ "$RECREATE" -eq 1 ]; then
+    if [ -d "$ENV_PREFIX" ]; then
+        echo "Removing existing environment prefix '$ENV_PREFIX'..."
+        conda env remove -p "$ENV_PREFIX" -y >/dev/null 2>&1 || true
+        rm -rf "$ENV_PREFIX"
     fi
 
-    echo "Creating environment '$ENV_NAME'..."
-    conda env create -f "$YAML_FILE"
+    mkdir -p "$(dirname "$ENV_PREFIX")"
+
+    echo "Creating environment from lock file at '$ENV_PREFIX'..."
+    conda run -n base conda-lock install -p "$ENV_PREFIX" "$LOCK_FILE" || return 1
 
     echo "$CURRENT_CHECKSUM" > "$CHECKSUM_FILE"
-
 else
-    echo "Environment '$ENV_NAME' is already up to date."
+    echo "Environment at '$ENV_PREFIX' is already up to date."
 fi
 
-# ----------------------------------------------------
-# Activate environment
-# ----------------------------------------------------
-echo "Activating environment '$ENV_NAME'..."
-conda activate "$ENV_NAME"
+echo "Activating environment at '$ENV_PREFIX'..."
+conda activate "$ENV_PREFIX" || return 1
 
-# ----------------------------------------------------
-# Query active environment information
-# ----------------------------------------------------
-ACTIVE_ENV=$(conda info --json | jq -r '.active_prefix_name')
-ACTIVE_ENV_PATH=$(conda info --json | jq -r '.active_prefix')
-
-if [ "$ACTIVE_ENV" = "$ENV_NAME" ]; then
-    echo
-    echo "=========================================="
-    echo "Environment '$ENV_NAME' is active."
-    echo "Path: $ACTIVE_ENV_PATH"
-    echo "=========================================="
-else
-    echo "Failed to activate '$ENV_NAME'."
-    return 1
-fi
+echo
+echo "=========================================="
+echo "Environment is active."
+echo "Prefix: $CONDA_PREFIX"
+echo "=========================================="

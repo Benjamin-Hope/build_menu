@@ -21,7 +21,7 @@ class BuildHelper:
             f"--profile={profile}",
             *self.__conan_toolchain_conf(),
             "--build=missing",
-            "-c", f"user.myproject:build_target_path={configuration}",
+            "-c", f"user.project:build_target_path={configuration}",
         ]
 
         print("Running:")
@@ -95,7 +95,8 @@ class BuildHelper:
             for key, value in self.__cls.config.items(section):
                 import platform
                 if (key == "os") and (value != platform.system()):
-                    print(f"Warning! OS COnfiguration '{value}' do not match the actual OS '{platform.system()}'")
+                    print(
+                        f"Warning! OS COnfiguration '{value}' do not match the actual OS '{platform.system()}'")
                 # avoid silent overwrite if same key appears in multiple sections
                 if hasattr(self.options, key):
                     raise ValueError(f"Duplicate key across sections: {key}")
@@ -126,21 +127,21 @@ class BuildHelper:
 
         compiler_executables = {"c": cc, "cpp": cxx}
         if is_windows:
-          extra_variables = {
-              "CMAKE_AR": {"value": ar, "cache": True, "type": "FILEPATH", "force": True},
-              "CMAKE_RANLIB": {"value": ranlib, "cache": True, "type": "FILEPATH", "force": True},
-          }
+            extra_variables = {
+                "CMAKE_AR": {"value": ar, "cache": True, "type": "FILEPATH", "force": True},
+                "CMAKE_RANLIB": {"value": ranlib, "cache": True, "type": "FILEPATH", "force": True},
+            }
 
-          return [
-              "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
-              "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
-              "-c:h", f"tools.cmake.cmaketoolchain:extra_variables={extra_variables!r}",
-          ]
+            return [
+                "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
+                "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
+                "-c:h", f"tools.cmake.cmaketoolchain:extra_variables={extra_variables!r}",
+            ]
         else:
-          return [
-              "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
-              "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
-          ]
+            return [
+                "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
+                "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
+            ]
 
     def __clean(self):
         import shutil

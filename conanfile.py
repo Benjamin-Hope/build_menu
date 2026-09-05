@@ -1,6 +1,6 @@
 '''
 You can run the following commands to build and package your project using Conan:
-conan create . myproject/1.0.0@ -s build_type=Release
+conan create . project/1.0.0@ -s build_type=Release
 '''
 import os
 
