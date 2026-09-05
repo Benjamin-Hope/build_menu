@@ -121,12 +121,27 @@ class BuildHelper:
             cxx = p("x86_64-w64-mingw32-g++.exe")
             ar = p("x86_64-w64-mingw32-ar.exe")
             ranlib = p("x86_64-w64-mingw32-ranlib.exe")
+            mingw_lib = (
+                Path(conda_prefix)
+                / "Library"
+                / "x86_64-w64-mingw32"
+                / "sysroot"
+                / "usr"
+                / "lib"
+            )
+
+            if not (mingw_lib / "crt2.o").is_file():
+                raise RuntimeError(
+                    f"Conda MinGW startup files are missing: {mingw_lib}"
+                )
         else:
             cc = p("gcc")
             cxx = p("g++")
 
         compiler_executables = {"c": cc, "cpp": cxx}
         if is_windows:
+            startup_flags = [f"-B{mingw_lib.as_posix()}"]
+            linker_flags = [*startup_flags, f"-L{mingw_lib.as_posix()}"]
             extra_variables = {
                 "CMAKE_AR": {"value": ar, "cache": True, "type": "FILEPATH", "force": True},
                 "CMAKE_RANLIB": {"value": ranlib, "cache": True, "type": "FILEPATH", "force": True},
@@ -135,6 +150,10 @@ class BuildHelper:
             return [
                 "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
                 "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
+                "-c:h", f"tools.build:cflags={startup_flags!r}",
+                "-c:h", f"tools.build:cxxflags={startup_flags!r}",
+                "-c:h", f"tools.build:exelinkflags={linker_flags!r}",
+                "-c:h", f"tools.build:sharedlinkflags={linker_flags!r}",
                 "-c:h", f"tools.cmake.cmaketoolchain:extra_variables={extra_variables!r}",
             ]
         else:

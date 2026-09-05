@@ -30,9 +30,10 @@ class ProjectConan(ConanFile):
         self.requires("fmt/11.1.4")
 
     def build_requirements(self):
+        if self.conf.get("user.project:unit_test", default=False):
+            self.test_requires("gtest/1.15.0")
         # Ensure CMake is available for the build process.
         # self.tool_requires("cmake/3.15.0") # NOTE: If you use the env activations this is already included
-        pass
 
     def layout(self):
         conf_name = self.conf.get(
@@ -44,8 +45,8 @@ class ProjectConan(ConanFile):
         toolchain = CMakeToolchain(self)
 
         unit_test = self.conf.get(
-          "user.project:unit_test",
-          False
+            "user.project:unit_test",
+            False
         )
         toolchain.variables["UNIT_TEST"] = 1 if unit_test else 0
         toolchain.generate()

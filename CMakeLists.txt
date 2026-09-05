@@ -6,6 +6,10 @@ project(
     LANGUAGES CXX
 )
 
+if(UNIT_TEST)
+  enable_testing()
+endif()
+
 set(PROJECT_TARGET ${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 20)

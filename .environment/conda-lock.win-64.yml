@@ -13,7 +13,7 @@
 version: 1
 metadata:
   content_hash:
-    win-64: 0dc1ec7892c816f114977cd2c94ee116b977b68a683e5ad70633bd9d8f761297
+    win-64: 08348332a3f5ccc561fb4d2c25741ee55cb681d85a6704d4c5ac022ba88c3b30
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -171,6 +171,20 @@ package:
     sha256: ab29d57dc70786c1269633ba3dff20288b81664d3ff8d21af995742e2bb03287
   category: main
   optional: false
+- name: colorlog
+  version: 6.11.0
+  manager: conda
+  platform: win-64
+  dependencies:
+    __win: ''
+    colorama: ''
+    python: '>=3.10'
+  url: https://conda.anaconda.org/conda-forge/noarch/colorlog-6.11.0-pyha7b4d00_0.conda
+  hash:
+    md5: 964f50b955c9c7c45ef19e7798adeec2
+    sha256: 6ee9968aba0f91c963705a2184379354645bd7d2e8e0e13cc916fde5a22617d4
+  category: main
+  optional: false
 - name: conan
   version: 2.32.0
   manager: conda
@@ -262,30 +276,21 @@ package:
     sha256: 47cba5bcea133854795d9d59c45418f6dc7b8c1cd4e4fc505ace35cc519e8615
   category: main
   optional: false
-- name: gmock
-  version: 1.18.0
+- name: gcovr
+  version: '8.3'
   manager: conda
   platform: win-64
   dependencies:
-    gtest: ==1.18.0,>=1.18.0,<1.18.1.0a0
-  url: https://conda.anaconda.org/conda-forge/win-64/gmock-1.18.0-h4f519af_1.conda
+    colorlog: ''
+    jinja2: ''
+    lxml: ''
+    pygments: '>=2.13.0'
+    python: '>=3.9'
+    tomli: '>=1.1.0'
+  url: https://conda.anaconda.org/conda-forge/noarch/gcovr-8.3-pyhd8ed1ab_0.conda
   hash:
-    md5: 98b238274cc3e4d4a90ad5610987e34b
-    sha256: 7493d7e84a00b8b4dc0bec18b41ad9619f5abe332fafd70e3e8d7da5472ce562
-  category: main
-  optional: false
-- name: gtest
-  version: 1.18.0
-  manager: conda
-  platform: win-64
-  dependencies:
-    ucrt: '>=10.0.20348.0'
-    vc: '>=14.3,<15'
-    vc14_runtime: '>=14.44.35208'
-  url: https://conda.anaconda.org/conda-forge/win-64/gtest-1.18.0-h477610d_1.conda
-  hash:
-    md5: 931a07f37b46fb3c4ad8d757c80cdbde
-    sha256: b13377ca438565267079e98cdb0cc96b80099309f05f8643dbf8643066f8007a
+    md5: cbc06c5494e74cb20d1e740a3c844eec
+    sha256: 42987a702b02fb40450419cc4fc4feba003548cf8b8a0760cc1743d849e16077
   category: main
   optional: false
 - name: gxx
@@ -466,6 +471,20 @@ package:
     sha256: 9ef1a22fb50b31fbf9c01cf709e8f55b60fd3c02401d150be4a55943f9e3832f
   category: main
   optional: false
+- name: libiconv
+  version: '1.18'
+  manager: conda
+  platform: win-64
+  dependencies:
+    ucrt: '>=10.0.20348.0'
+    vc: '>=14.3,<15'
+    vc14_runtime: '>=14.44.35208'
+  url: https://conda.anaconda.org/conda-forge/win-64/libiconv-1.18-hc1393d2_3.conda
+  hash:
+    md5: a8a2abdf0f901bc4779d9b7be0845921
+    sha256: 35e04e3ddac7720fc7c550a1c9f998604299d6a7bd1f3ec9b2825d825061daa2
+  category: main
+  optional: false
 - name: liblzma
   version: 5.8.3
   manager: conda
@@ -604,6 +623,59 @@ package:
     sha256: 0fccf2d17026255b6e10ace1f191d0a2a18f2d65088fd02430be17c701f8ffe0
   category: main
   optional: false
+- name: libxml2
+  version: 2.15.3
+  manager: conda
+  platform: win-64
+  dependencies:
+    icu: '>=78.3,<79.0a0'
+    libiconv: '>=1.18,<2.0a0'
+    liblzma: '>=5.8.3,<6.0a0'
+    libxml2-16: 2.15.3
+    libzlib: '>=1.3.2,<2.0a0'
+    ucrt: '>=10.0.20348.0'
+    vc: '>=14.3,<15'
+    vc14_runtime: '>=14.44.35208'
+  url: https://conda.anaconda.org/conda-forge/win-64/libxml2-2.15.3-h8ef44ab_1.conda
+  hash:
+    md5: 45a5a1c709a69f14cf176220788d18a9
+    sha256: a83e9adcf7c50f20289dc6890707c8e4e84151b4204b0f7344998138807458d1
+  category: main
+  optional: false
+- name: libxml2-16
+  version: 2.15.3
+  manager: conda
+  platform: win-64
+  dependencies:
+    icu: '>=78.3,<79.0a0'
+    libiconv: '>=1.18,<2.0a0'
+    liblzma: '>=5.8.3,<6.0a0'
+    libzlib: '>=1.3.2,<2.0a0'
+    ucrt: '>=10.0.20348.0'
+    vc: '>=14.3,<15'
+    vc14_runtime: '>=14.44.35208'
+  url: https://conda.anaconda.org/conda-forge/win-64/libxml2-16-2.15.3-h3cfd58e_1.conda
+  hash:
+    md5: 6e7dadff3f3bde2d29d29a3ec34f2d58
+    sha256: 8163de24a7ddb4ebf9587c3a45ba950caf3690b9646b76f007ca15e6e52b5881
+  category: main
+  optional: false
+- name: libxslt
+  version: 1.1.45
+  manager: conda
+  platform: win-64
+  dependencies:
+    libxml2: ''
+    libxml2-16: '>=2.15.3'
+    ucrt: '>=10.0.20348.0'
+    vc: '>=14.3,<15'
+    vc14_runtime: '>=14.44.35208'
+  url: https://conda.anaconda.org/conda-forge/win-64/libxslt-1.1.45-ha5384fd_1.conda
+  hash:
+    md5: ea7b3abfe39c180d1dce620867e267d1
+    sha256: 7a2402fa33b7e4a99bba6250ce21c36269a8acbfcb3652057dce0f4a60b7f6bd
+  category: main
+  optional: false
 - name: libzlib
   version: 1.3.2
   manager: conda
@@ -616,6 +688,26 @@ package:
   hash:
     md5: 5d2ff29d465097458cc3ff6569151991
     sha256: 0629c2cc0404d3bb29d6baa7b4ba62da80797015e86de050db81ea5a07050527
+  category: main
+  optional: false
+- name: lxml
+  version: 6.1.2
+  manager: conda
+  platform: win-64
+  dependencies:
+    libxml2: ''
+    libxml2-16: '>=2.15.3'
+    libxslt: '>=1.1.45,<2.0a0'
+    libzlib: '>=1.3.2,<2.0a0'
+    python: '>=3.14,<3.15.0a0'
+    python_abi: 3.14.*
+    ucrt: '>=10.0.20348.0'
+    vc: '>=14.3,<15'
+    vc14_runtime: '>=14.44.35208'
+  url: https://conda.anaconda.org/conda-forge/win-64/lxml-6.1.2-py314h3fc22ad_2.conda
+  hash:
+    md5: c4295989c3b262c7b7fec9427b868b5a
+    sha256: 9c885655afb448a411d3e3fa64cd43a0a191ee56b64a830ee3be5e8e998d62a2
   category: main
   optional: false
 - name: m2-conda-epoch
@@ -777,6 +869,18 @@ package:
     sha256: aa94f1212029ef80638e86b970920cefca1f979fe4c7def59e1f950f95840ed9
   category: main
   optional: false
+- name: pygments
+  version: 2.21.0
+  manager: conda
+  platform: win-64
+  dependencies:
+    python: '>=3.10'
+  url: https://conda.anaconda.org/conda-forge/noarch/pygments-2.21.0-pyhcf101f3_0.conda
+  hash:
+    md5: 2882dee445dfa45b0c5afce3ffb7730a
+    sha256: f5f015ff1bc3e1b7fc08eee096b1865234189ae0b82bebdb86a5369116e42fa0
+  category: main
+  optional: false
 - name: pyjwt
   version: 2.13.0
   manager: conda
@@ -913,6 +1017,18 @@ package:
   hash:
     md5: dd9eb33c99d352b6356f86964d6040f7
     sha256: f19618a3a82cc483dacf1c70a30367ee7b0c7e71b90f1f80e14feff44fbd3688
+  category: main
+  optional: false
+- name: tomli
+  version: 2.4.1
+  manager: conda
+  platform: win-64
+  dependencies:
+    python: '>=3.10'
+  url: https://conda.anaconda.org/conda-forge/noarch/tomli-2.4.1-pyhcf101f3_0.conda
+  hash:
+    md5: b5325cf06a000c5b14970462ff5e4d58
+    sha256: 91cafdb64268e43e0e10d30bd1bef5af392e69f00edd34dfaf909f69ab2da6bd
   category: main
   optional: false
 - name: typing_extensions
