@@ -41,3 +41,8 @@ endif()
 add_library(${TARGET_NAME}_lib STATIC ${sources} ${headers})
 target_include_directories(${TARGET_NAME}_lib PUBLIC ${include_dirs})
 target_compile_features(${TARGET_NAME}_lib PRIVATE cxx_std_20)
+
+if(UNIT_TEST AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(${TARGET_NAME}_lib PRIVATE --coverage)
+    target_link_libraries(${TARGET_NAME}_lib INTERFACE gcov)
+endif()

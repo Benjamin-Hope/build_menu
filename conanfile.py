@@ -126,15 +126,20 @@ class BuildMenu:
             print(
                 f"Executing build for profile: {self.profile_selected}")
             self.BuildHelper.build(self.profile_selected)
-
-        if self.options.action == "unit_test":
+        elif self.options.action == "unit_test":
             print(
                 f"Executing build for profile: {self.profile_selected}")
             self.BuildHelper.build_test(self.profile_selected)
-
-        if self.options.action == "get_dependencies":
+        elif self.options.action == "get_dependencies":
             print(
                 f"Getting dependencies for profile: {self.profile_selected}")
+        elif self.options.action == "static_code_analysis":
+            print(
+                f"Performing static code analysis for profile: {self.profile_selected}")
+            self.BuildHelper.static_code_analysis(self.profile_selected)
+        else:
+            print(
+                f"Unknown action for profile: {self.profile_selected}")
 
         self.build_path = os.path.join(os.path.dirname(__file__), "build")
         from build_helper.package_helper import Package_Helper

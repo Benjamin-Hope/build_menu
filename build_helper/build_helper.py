@@ -68,6 +68,35 @@ class BuildHelper:
 
         self.__monitor_process_output(configuration, process)
 
+    def static_code_analysis(self, configuration: str):
+        from build_helper.coverage import coverage_command
+
+        test_build_dir = (
+            self.__cls.project_dir
+            / "build"
+            / "Unit_Tests"
+            / "Debug"
+        )
+
+        output_dir = (self.__cls.project_dir /
+                      "build" /
+                      str(configuration))
+
+        command = coverage_command(test_build_dir, output_dir)
+
+        print("Running:")
+        print(" ".join(map(str, command)))
+        print()
+
+        process = subprocess.Popen(
+            command,
+            cwd=self.__cls.project_dir,
+            stdout=None,
+            stderr=None,
+            text=True,
+        )
+        self.__monitor_process_output(configuration, process)
+
     def __monitor_process_output(self, configuration, process):
         # Check process output every x milliseconds
         self.__cls.app.register_process(configuration, process)
