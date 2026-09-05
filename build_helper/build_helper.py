@@ -38,6 +38,36 @@ class BuildHelper:
 
         self.__monitor_process_output(configuration, process)
 
+    def build_test(self, configuration: str):
+        self.__clean()
+
+        profile = self.__create_conan_profile(configuration)
+
+        command = [
+            "conan",
+            "build",
+            str(self.__cls.project_dir),
+            f"--profile={profile}",
+            *self.__conan_toolchain_conf(),
+            "--build=missing",
+            "-c", f"user.project:build_target_path={configuration}",
+            "-c", "user.project:unit_test=True",
+        ]
+
+        print("Running:")
+        print(" ".join(command))
+        print()
+
+        process = subprocess.Popen(
+            command,
+            cwd=self.__cls.project_dir,
+            stdout=None,
+            stderr=None,
+            text=True
+        )
+
+        self.__monitor_process_output(configuration, process)
+
     def __monitor_process_output(self, configuration, process):
         # Check process output every x milliseconds
         self.__cls.app.register_process(configuration, process)

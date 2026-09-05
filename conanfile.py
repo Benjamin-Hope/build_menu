@@ -15,7 +15,7 @@ from conan.tools.files import copy
 
 
 class ProjectConan(ConanFile):
-    name = "myproject"  # TODO: Insert Project Name Here
+    name = "project"  # TODO: Insert Project Name Here
     version = "1.0.0"  # TODO: Insert Project Version Here
 
     package_type = "application"
@@ -36,12 +36,18 @@ class ProjectConan(ConanFile):
 
     def layout(self):
         conf_name = self.conf.get(
-            "user.myproject:build_target_path", default="fallback", check_type=str)
+            "user.project:build_target_path", default="fallback", check_type=str)
 
         cmake_layout(self, build_folder=f"build/{conf_name}")
 
     def generate(self):
         toolchain = CMakeToolchain(self)
+
+        unit_test = self.conf.get(
+          "user.project:unit_test",
+          False
+        )
+        toolchain.variables["UNIT_TEST"] = 1 if unit_test else 0
         toolchain.generate()
 
         deps = CMakeDeps(self)
@@ -60,6 +66,9 @@ class ProjectConan(ConanFile):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
+
+        if self.conf.get("user.project:unit_test", False):
+            cmake.test()
 
     def package(self):
         # Packages the build artifacts into Conan's package directory.
@@ -116,6 +125,11 @@ class BuildMenu:
             print(
                 f"Executing build for profile: {self.profile_selected}")
             self.BuildHelper.build(self.profile_selected)
+
+        if self.options.action == "unit_test":
+            print(
+                f"Executing build for profile: {self.profile_selected}")
+            self.BuildHelper.build_test(self.profile_selected)
 
         if self.options.action == "get_dependencies":
             print(
