@@ -21,7 +21,7 @@ def gcc_include_argument(compiler: Path) -> str:
     return f"--extra-arg-before=-isystem{include_dir}"
 
 
-def code_quality_analysis(build_dir: Path) -> list[str]:
+def code_quality_analysis(build_dir: Path, output_dir: Path) -> list[str]:
     compile_database = build_dir / "compile_commands.json"
     if not compile_database.is_file():
         raise RuntimeError(
@@ -75,6 +75,8 @@ def code_quality_analysis(build_dir: Path) -> list[str]:
         "clang-diagnostic-shadow,"
         "clang-diagnostic-conversion,"
         "clang-diagnostic-format",
+        
+        f"--export-fixes={output_dir / 'clang-tidy-fixes.yaml'}",
 
         *map(str, source_files),
     ]
