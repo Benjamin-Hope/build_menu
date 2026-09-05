@@ -102,8 +102,11 @@ class BuildMenu:
         self.app.fill_menu_items("EXECUTE", self.execute)
         self.app.mainloop()
 
-    def execute(self):
-        self.profile_selected = self.app.get_selected_profile()
+    def execute(self, profile: str = None):
+        if profile is not None:
+            self.profile_selected = profile
+        else:
+            self.profile_selected = self.app.get_selected_profile()
 
         if self.profile_selected is None:
             return
@@ -153,11 +156,25 @@ class BuildMenu:
 if __name__ == "__main__":
     import argparse
 
+    # TODO: Change based on Setup
+    profiles_path = os.path.join(os.path.dirname(__file__), "build_profiles")
+    profiles = [str(path.name.replace(".ini", ""))
+                for path in Path(profiles_path).glob("*.ini")]
+
     parser = argparse.ArgumentParser(description="Build Menu")
     parser.add_argument("--gui", action="store_true", help="Launch the GUI")
+
+    for profile in profiles:
+        parser.add_argument(
+            f"--{profile}", action="store_true", help=f"Select the {profile} profile")
+
     args = parser.parse_args()
 
     build_menu = BuildMenu()
 
     if args.gui:
         build_menu.generate_user_interface()
+
+    for profile in profiles:
+        if getattr(args, profile):
+            build_menu.execute(profile=profile)
