@@ -157,9 +157,12 @@ class BuildHelper:
 
     def __monitor_process_output(self, configuration, process):
         # Check process output every x milliseconds
-        self.__cls.app.register_process(configuration, process)
-        self.__cls.app.after(
-            self.timer_ms, self.__cls.app.check_process_output)
+        try:
+            self.__cls.app.register_process(configuration, process)
+            self.__cls.app.after(
+                self.timer_ms, self.__cls.app.check_process_output)
+        except AttributeError:
+            pass
 
     def _validate_config_information(self):
         # Placeholder for config validation logic
