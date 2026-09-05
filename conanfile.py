@@ -137,6 +137,10 @@ class BuildMenu:
             print(
                 f"Performing static code analysis for profile: {self.profile_selected}")
             self.BuildHelper.static_code_analysis(self.profile_selected)
+        elif self.options.action == "coverage_analysis":
+            print(
+                f"Performing static code analysis for profile: {self.profile_selected}")
+            self.BuildHelper.coverage_analysis(self.profile_selected)
         else:
             print(
                 f"Unknown action for profile: {self.profile_selected}")

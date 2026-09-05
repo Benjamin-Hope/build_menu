@@ -1,8 +1,83 @@
 import os
-import sys
 import shutil
 import subprocess
 from pathlib import Path
+
+
+def get_verified_ctidy():
+    ctidy = shutil.which("clang-tidy")
+    if ctidy is None:
+        raise RuntimeError(
+            "clang-tidy is not installed in the active environment.")
+    return ctidy
+
+
+def gcc_include_argument(compiler: Path) -> str:
+    include_dir = subprocess.check_output(
+        [str(compiler), "-print-file-name=include"],
+        text=True,
+    ).strip()
+
+    return f"--extra-arg-before=-isystem{include_dir}"
+
+
+def code_quality_analysis(build_dir: Path) -> list[str]:
+    compile_database = build_dir / "compile_commands.json"
+    if not compile_database.is_file():
+        raise RuntimeError(
+            f"No compile_commands.json found in {build_dir}. "
+            "Run the Unit_Tests profile first."
+        )
+    import json
+    commands = json.loads(compile_database.read_text(encoding="utf-8"))
+    compiler = Path(commands[0]["command"].split()[0])
+
+    if not compiler.is_file():
+        raise RuntimeError(
+            f"Compiler from compilation database does not exist: {compiler}"
+        )
+
+    source_files = [
+        Path(entry["file"])
+        for entry in commands
+        if "/test/" not in entry["file"].replace("\\", "/")
+    ]
+
+    return [
+        get_verified_ctidy(),
+        "-p", str(build_dir),
+        "--checks="
+        "-*,"
+        "clang-diagnostic-*,"
+        "bugprone-*,"
+        "performance-*,"
+        "portability-*,"
+        "clang-analyzer-*,"
+        "cert-*,"
+        "cppcoreguidelines-*,"
+        "modernize-use-nullptr,"
+        "readability-implicit-bool-conversion",
+        gcc_include_argument(compiler),
+
+        "--extra-arg=-Wall",
+        "--extra-arg=-Wextra",
+        "--extra-arg=-Wpedantic",
+        "--extra-arg=-Wshadow",
+        "--extra-arg=-Wconversion",
+        "--extra-arg=-Wunused-variable",
+        "--extra-arg=-Wformat=2",
+        "--extra-arg=-Wnull-dereference",
+        "--extra-arg=-Wdouble-promotion",
+
+        "--warnings-as-errors="
+        "clang-diagnostic-unused-variable,"
+        "clang-diagnostic-unused-parameter,"
+        "clang-diagnostic-shadow,"
+        "clang-diagnostic-conversion,"
+        "clang-diagnostic-format",
+
+        *map(str, source_files),
+    ]
 
 
 def get_verified_gcov():
@@ -14,7 +89,7 @@ def get_verified_gcov():
 
     # Verify gcov installation
     if shutil.which(gcov) is None:
-        print(f"Error: gcov not found: {gcov}")
+        raise RuntimeError(f"Error: gcov not found: {gcov}")
 
     # Test version
     version = subprocess.check_output([gcov, "--version"]).decode("utf-8")
