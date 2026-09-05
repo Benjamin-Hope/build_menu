@@ -21,7 +21,37 @@ class BuildHelper:
             f"--profile={profile}",
             *self.__conan_toolchain_conf(),
             "--build=missing",
-            "-c", f"user.myproject:build_target_path={configuration}",
+            "-c", f"user.project:build_target_path={configuration}",
+        ]
+
+        print("Running:")
+        print(" ".join(command))
+        print()
+
+        process = subprocess.Popen(
+            command,
+            cwd=self.__cls.project_dir,
+            stdout=None,
+            stderr=None,
+            text=True
+        )
+
+        self.__monitor_process_output(configuration, process)
+
+    def build_test(self, configuration: str):
+        self.__clean()
+
+        profile = self.__create_conan_profile(configuration)
+
+        command = [
+            "conan",
+            "build",
+            str(self.__cls.project_dir),
+            f"--profile={profile}",
+            *self.__conan_toolchain_conf(),
+            "--build=missing",
+            "-c", f"user.project:build_target_path={configuration}",
+            "-c", "user.project:unit_test=True",
         ]
 
         print("Running:")
@@ -65,7 +95,8 @@ class BuildHelper:
             for key, value in self.__cls.config.items(section):
                 import platform
                 if (key == "os") and (value != platform.system()):
-                    print(f"Warning! OS COnfiguration '{value}' do not match the actual OS '{platform.system()}'")
+                    print(
+                        f"Warning! OS COnfiguration '{value}' do not match the actual OS '{platform.system()}'")
                 # avoid silent overwrite if same key appears in multiple sections
                 if hasattr(self.options, key):
                     raise ValueError(f"Duplicate key across sections: {key}")
@@ -90,27 +121,46 @@ class BuildHelper:
             cxx = p("x86_64-w64-mingw32-g++.exe")
             ar = p("x86_64-w64-mingw32-ar.exe")
             ranlib = p("x86_64-w64-mingw32-ranlib.exe")
+            mingw_lib = (
+                Path(conda_prefix)
+                / "Library"
+                / "x86_64-w64-mingw32"
+                / "sysroot"
+                / "usr"
+                / "lib"
+            )
+
+            if not (mingw_lib / "crt2.o").is_file():
+                raise RuntimeError(
+                    f"Conda MinGW startup files are missing: {mingw_lib}"
+                )
         else:
             cc = p("gcc")
             cxx = p("g++")
 
         compiler_executables = {"c": cc, "cpp": cxx}
         if is_windows:
-          extra_variables = {
-              "CMAKE_AR": {"value": ar, "cache": True, "type": "FILEPATH", "force": True},
-              "CMAKE_RANLIB": {"value": ranlib, "cache": True, "type": "FILEPATH", "force": True},
-          }
+            startup_flags = [f"-B{mingw_lib.as_posix()}"]
+            linker_flags = [*startup_flags, f"-L{mingw_lib.as_posix()}"]
+            extra_variables = {
+                "CMAKE_AR": {"value": ar, "cache": True, "type": "FILEPATH", "force": True},
+                "CMAKE_RANLIB": {"value": ranlib, "cache": True, "type": "FILEPATH", "force": True},
+            }
 
-          return [
-              "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
-              "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
-              "-c:h", f"tools.cmake.cmaketoolchain:extra_variables={extra_variables!r}",
-          ]
+            return [
+                "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
+                "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
+                "-c:h", f"tools.build:cflags={startup_flags!r}",
+                "-c:h", f"tools.build:cxxflags={startup_flags!r}",
+                "-c:h", f"tools.build:exelinkflags={linker_flags!r}",
+                "-c:h", f"tools.build:sharedlinkflags={linker_flags!r}",
+                "-c:h", f"tools.cmake.cmaketoolchain:extra_variables={extra_variables!r}",
+            ]
         else:
-          return [
-              "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
-              "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
-          ]
+            return [
+                "-c:h", "tools.cmake.cmaketoolchain:generator=Ninja",
+                "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
+            ]
 
     def __clean(self):
         import shutil

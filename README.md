@@ -16,4 +16,3 @@ Activate the environment by running the `.\activate_conda_env.bat` script.
 
 - Static Code analysis
 - Unit tests
-- Custom Runners
