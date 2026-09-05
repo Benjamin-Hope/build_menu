@@ -8,10 +8,12 @@ dependencies:
   - conan
   - gcc=16.*
   - gxx=16.*
+  - m2w64-sysroot_win-64 # [win]
   - binutils
   - libgcc
   - libstdcxx
   - cmake
   - ninja
-  - m2w64-sysroot_win-64 # [win]
+
   - gcovr
+  - clang-tools

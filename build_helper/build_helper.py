@@ -10,7 +10,7 @@ class BuildHelper:
         self.timer_ms = 250
 
     def build(self, configuration: str):
-        self.__clean()
+        self.__clean(configuration)
 
         profile = self.__create_conan_profile(configuration)
 
@@ -39,7 +39,7 @@ class BuildHelper:
         self.__monitor_process_output(configuration, process)
 
     def build_test(self, configuration: str):
-        self.__clean()
+        self.__clean(configuration)
 
         profile = self.__create_conan_profile(configuration)
 
@@ -67,6 +67,93 @@ class BuildHelper:
         )
 
         self.__monitor_process_output(configuration, process)
+
+    def coverage_analysis(self, configuration: str):
+        self.__clean(configuration)
+        test_build_dir = (
+            self.__cls.project_dir
+            / "build"
+            / "Unit_Tests"
+            / "Debug"
+        )
+
+        output_dir = (self.__cls.project_dir /
+                      "build" /
+                      str(configuration))
+
+        from build_helper.coverage import coverage_command
+        command = coverage_command(test_build_dir, output_dir)
+
+        print("Running:")
+        print(" ".join(map(str, command)))
+        print()
+
+        process = subprocess.Popen(
+            command,
+            cwd=self.__cls.project_dir,
+            stdout=None,
+            stderr=None,
+            text=True,
+        )
+        self.__monitor_process_output(configuration, process)
+
+    def static_code_analysis(self, configuration: str):
+        self.__clean(configuration)
+        test_build_dir = (
+            self.__cls.project_dir
+            / "build"
+            / "Unit_Tests"
+            / "Debug"
+        )
+
+        output_dir = (self.__cls.project_dir /
+                      "build" /
+                      str(configuration))
+
+        # Check code quality using clang-tidy
+        from build_helper.coverage import code_quality_analysis
+
+        command = code_quality_analysis(test_build_dir, output_dir)
+        print("Running:")
+        print(" ".join(map(str, command)))
+        print()
+
+        log_path = output_dir / "clang-tidy.log"
+
+        process = self.__start_logged_process(
+            command,
+            log_path,
+        )
+        self.__monitor_process_output(configuration, process)
+
+    def __start_logged_process(
+        self,
+        command: list[str],
+        log_path: Path,
+    ) -> subprocess.Popen:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        process = subprocess.Popen(
+            command,
+            cwd=self.__cls.project_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        def copy_output():
+            import sys
+            with log_path.open("w", encoding="utf-8") as log_file:
+                for line in process.stdout:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+                    log_file.write(line)
+                    log_file.flush()
+
+        import threading
+        threading.Thread(target=copy_output, daemon=True).start()
+        return process
 
     def __monitor_process_output(self, configuration, process):
         # Check process output every x milliseconds
@@ -162,9 +249,9 @@ class BuildHelper:
                 "-c:h", f"tools.build:compiler_executables={compiler_executables!r}",
             ]
 
-    def __clean(self):
+    def __clean(self, configuration: str = ''):
         import shutil
-        build_dir = Path(self.__cls.project_dir) / "build"
+        build_dir = Path(self.__cls.project_dir) / "build" / configuration
 
         if build_dir.exists():
             print(f"Cleaning {build_dir}")
