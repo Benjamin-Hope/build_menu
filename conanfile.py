@@ -85,6 +85,7 @@ class BuildMenu:
         self.project_dir = Path(__file__).resolve().parent
         # TODO: Change to the directory where your build profiles are located
         self.profile_dir = Path(self.project_dir) / "build_profiles"
+        self.build_dir = Path(self.project_dir) / "build"
         # Below are the allowed config options for the build profiles
 
         self.sections = ["execution", "settings"]
@@ -124,6 +125,14 @@ class BuildMenu:
         self.BuildHelper._load_options_from_config()
 
         self.options = self.BuildHelper.options
+
+        # Make sure all dependencies are built before proceeding
+        if hasattr(self.options, "depends_on"):
+            self.dependencies = self.options.depends_on.split(",")
+            for dependency in self.dependencies:
+                build_target_path = Path(self.build_dir) / dependency
+                if not build_target_path.exists():
+                    self.execute(profile=dependency)
 
         if self.options.action == "build":
             print(
