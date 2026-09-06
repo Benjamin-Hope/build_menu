@@ -14,5 +14,5 @@ Activate the environment by running the `.\activate_conda_env.bat` script.
 
 ## TODO LIST:
 
-- 'Depends on flag' functionality
 - Code Cleanup
+- Create Documentation
