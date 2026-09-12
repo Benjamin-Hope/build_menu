@@ -134,6 +134,7 @@ class BuildMenu:
                 if not build_target_path.exists():
                     self.execute(profile=dependency)
 
+        # NOTE: Define actions based on the selected profile's options
         if self.options.action == "build":
             print(
                 f"Executing build for profile: {self.profile_selected}")
